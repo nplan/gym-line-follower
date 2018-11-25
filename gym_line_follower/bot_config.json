@@ -1,0 +1,19 @@
+{
+  "chassis_mass": 0.3,
+  "chassis_izz": 1e-3,
+  "wheel_mass": 0.01,
+  "wheel_izz": 1e-5,
+  "wheel_lateral_friction": 1.0,
+  "wheel_rolling_friction": 0.0,
+  "wheel_stiffness": 3e5,
+  "wheel_damping": 1000.0,
+  "motor_nominal_voltage": 6.0,
+  "motor_stall_torque": 0.057,
+  "motor_no_load_speed": 105.0,
+  "camera_window_height": 0.168,
+  "camera_window_top_width": 0.270,
+  "camera_window_bottom_width": 0.120,
+  "camera_window_distance": 0.112,
+  "track_ref_point_x": 0.112,
+  "volts": 5.0
+}

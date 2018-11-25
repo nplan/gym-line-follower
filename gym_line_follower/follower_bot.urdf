@@ -1,0 +1,149 @@
+<robot name="follower">
+
+    <!--Materials-->
+
+    <material name="red">
+        <color rgba="1 0 0 1"/>
+    </material>
+
+    <material name="blue">
+        <color rgba="0 0 1 1"/>
+    </material>
+
+    <material name="black">
+        <color rgba="0 0 0 1"/>
+    </material>
+
+    <material name="magenta">
+        <color rgba="1 0 1 1"/>
+    </material>
+
+    <!--Links-->
+    <link name="base">
+        <inertial>
+            <mass value="1e-6"/>
+            <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+        </inertial>
+    </link>
+
+    <link name="chassis">
+        <visual>
+            <geometry>
+                <!--<box size="0.1 0.08 0.015"/>-->
+                <mesh filename="chassis.dae"/>
+            </geometry>
+            <material name="magenta"/>
+            <origin rpy="0 0 3.14159" xyz="0 0 0"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.1 0.08 0.025"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.3"/>
+            <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="1e-3"/>
+        </inertial>
+    </link>
+
+    <link name="left_wheel">
+        <visual>
+            <geometry>
+                <cylinder length="0.013" radius="0.0145"/>
+            </geometry>
+            <material name="black"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder length="0.013" radius="0.0145"/>
+            </geometry>
+        </collision>
+        <contact>
+          <lateral_friction value="1.0"/>
+          <rolling_friction value="0.0"/>
+          <stiffness value="300000"/>
+          <damping value="1000"/>
+        </contact>
+        <inertial>
+            <mass value="0.01"/>
+            <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="1e-5"/>
+        </inertial>
+    </link>
+
+    <link name="right_wheel">
+        <visual>
+            <geometry>
+                <cylinder length="0.013" radius="0.0145"/>
+            </geometry>
+            <material name="black"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder length="0.013" radius="0.0145"/>
+            </geometry>
+        </collision>
+        <contact>
+          <lateral_friction value="1.0"/>
+          <rolling_friction value="0.0"/>
+          <stiffness value="300000"/>
+          <damping value="1000"/>
+        </contact>
+        <inertial>
+            <mass value="0.01"/>
+            <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="1e-5"/>
+        </inertial>
+    </link>
+
+    <link name="caster">
+        <visual>
+            <geometry>
+                <sphere radius="0.005"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.005"/>
+            </geometry>
+        </collision>
+        <contact>
+          <lateral_friction value="0.0"/>
+          <rolling_friction value="0.0"/>
+          <stiffness value="300000"/>
+          <damping value="1000"/>
+        </contact>
+        <inertial>
+            <mass value="0.01"/>
+            <inertia ixx="1e-5" ixy="0.0" ixz="0.0" iyy="1e-5" iyz="0.0" izz="1e-5"/>
+        </inertial>
+    </link>
+
+
+    <!--Joints-->
+    <joint name="base_to_chassis" type="fixed">
+        <parent link="base"/>
+        <child link="chassis"/>
+        <origin rpy="0 0 0" xyz="0.0355 0 0.0175"/>
+    </joint>
+
+    <joint name="chassis_to_left_wheel" type="continuous">
+        <parent link="chassis"/>
+        <child link="left_wheel"/>
+        <origin rpy="1.5708 0 0" xyz="-0.0355 0.0385 -0.003"/>
+        <axis xyz="0 0 1"/>
+    </joint>
+
+    <joint name="chassis_to_right_wheel" type="continuous">
+        <parent link="chassis"/>
+        <child link="right_wheel"/>
+        <origin rpy="-1.5708 0 0" xyz="-0.0355 -0.0385 -0.003"/>
+        <axis xyz="0 0 -1"/>
+    </joint>
+
+    <joint name="chassis_to_caster" type="fixed">
+        <parent link="chassis"/>
+        <child link="caster"/>
+        <origin rpy="0 0 0" xyz="0.04 0 -0.0125"/>
+    </joint>
+
+</robot>
