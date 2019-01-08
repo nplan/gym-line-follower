@@ -50,6 +50,8 @@ class LineFollowerBot:
         self.nb_cam_pts = nb_cam_points
 
         self.track_ref_point: ReferencePoint = None
+        self.cam_target_point: ReferencePoint = None  # POV Camera target point
+        self.cam_pos_point: ReferencePoint = None  # POC Camera position
 
         self.volts = 0.
 
@@ -84,6 +86,14 @@ class LineFollowerBot:
         self.track_ref_point = ReferencePoint(xy_shift=(tref_pt_x, 0.))
         self.track_ref_point.move(xy, yaw)
 
+        cam_target_pt_x = self.config["camera_target_point_x"]
+        self.cam_target_point = ReferencePoint(xy_shift=(cam_target_pt_x, 0.))
+        self.cam_target_point.move(xy, yaw)
+
+        cam_pos_pt_x = self.config["camera_position_point_x"]
+        self.cam_pos_point = ReferencePoint(xy_shift=(cam_pos_pt_x, 0.))
+        self.cam_pos_point.move(xy, yaw)
+
         nom_volt = self.config["motor_nominal_voltage"]
         no_load_speed = self.config["motor_no_load_speed"]
         stall_torque = self.config["motor_stall_torque"]
@@ -109,6 +119,8 @@ class LineFollowerBot:
         new_xy, new_yaw = self.get_position()
         self.cam_window.move(new_xy, new_yaw)
         self.track_ref_point.move(new_xy, new_yaw)
+        self.cam_target_point.move(new_xy, new_yaw)
+        self.cam_pos_point.move(new_xy, new_yaw)
         self.prev_pos = self.pos
         self.prev_vel = self.vel
         self.pos = new_xy, new_yaw
@@ -138,7 +150,7 @@ class LineFollowerBot:
         if self.obsv_type == "visible":
             if len(visible_pts) > 0:
                 pts = self.cam_window.convert_points_to_local(visible_pts)
-                pts = sort_points(pts)
+                pts = sort_points(pts, origin=self.track_ref_point.get_xy())
                 pts = interpolate_points(pts, segment_length=0.025)
             else:
                 pts = np.zeros((0, 2))

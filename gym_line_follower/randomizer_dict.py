@@ -3,12 +3,13 @@ import random
 
 class RandomizerDict(dict):
     """
-    Dict with randomizing function. If the value of a key is a list/tuple the value is randomized based on length
-    of the list/tuple:
-        [] --> [] does nothing
-        [x] --> x remove container
-        [x, y] --> a = random uniform sample on interval [x, y]
-        [x, y, ..., z] --> b = random choice ofe one value from the list
+    Dict with randomizing function. Supports int, float, str, bool.
+    If value randomization at a key is desired, provided value must be a dict with entries:
+        'range': [a, b] - random uniform sample in range a, b
+        'choice': [a, b, c, d, ...] - random choice of one value from list
+        'default': a - default value
+    Default value must always be provided. One of keys 'range' or 'choice' must be provided.
+    If value at key is not a dict no randomization is performed.
     Retains all other dict functionality,
     """
     def __init__(self, *args, **kwargs):
@@ -20,28 +21,58 @@ class RandomizerDict(dict):
         """
         Randomize dict values.
         :param seed: random generator seed
-        :return: None
         """
         random.seed(seed)
         for key, value in self.original.items():
-            if isinstance(value, (list, tuple)):
-                if len(value) < 1:
-                    continue
-                elif len(value) == 1:
-                    self[key] = value[0]
-                elif len(value) == 2:
-                    self[key] = random.uniform(value[0], value[1])
+            if isinstance(value, dict):
+                try:
+                    value["default"]
+                except KeyError:
+                    raise ValueError("No default value at key '{}'.".format(key))
+
+                try:
+                    self[key] = random.uniform(*value["range"])
+                except KeyError:
+                    pass
                 else:
-                    self[key] = random.choice(value)
+                    continue
+                try:
+                    self[key] = random.choice(value["choice"])
+                except KeyError:
+                    raise ValueError("No 'range' or 'choice' provided at key '{}'.".format(key))
+
+            elif isinstance(value, (int, float, str, bool)):
+                pass
+            else:
+                raise ValueError("Invalid data type at key '{}'.".format(key))
+
+    def set_defaults(self):
+        """
+        Set default values to dict.
+        """
+        for key, value in self.original.items():
+            if isinstance(value, dict):
+                try:
+                    self[key] = value["default"]
+                except KeyError:
+                    raise ValueError("No default value at key '{}'.".format(key))
+            elif isinstance(value, (int, float, str, bool)):
+                pass
+            else:
+                raise ValueError("Invaild data type at key '{}'.".format(key))
 
 
 if __name__ == '__main__':
-    data = {"a": 1.232,
-            "b": [2., 3.],
-            "c": [10, 20, 30, 40, 50],
-            "d": [42.23]}
+    data = {"a": 1.232,  # No randomization
+            "b": {"default": 1.234,
+                  "range": [0.0, 1.1]},  # Default + uniform range
+            "c": {"default": True,
+                  "choice": [1, 2, 3, False, 5, True]},  # Default + choice
+            "d": 1000}
     config = RandomizerDict(data)
     print(data)
     for i in range(10):
         config.randomize()
         print(config)
+    config.set_defaults()
+    print(config)

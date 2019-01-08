@@ -92,9 +92,9 @@ def sort_points(points, origin=(0, 0)):
             if point_dist(pt, sorted[-1]) < point_dist(points[next_idx], sorted[-1]):
                 next_idx = i
 
-        # # Check continuity
-        # if point_dist(points[next_idx], sorted[-1]) > 10e-3:
-        #     break
+        # Check continuity
+        if point_dist(points[next_idx], sorted[-1]) > 30e-3:
+            break
 
         sorted = np.append(sorted, [points[next_idx]], axis=0)
         points = np.delete(points, next_idx, axis=0)

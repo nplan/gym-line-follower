@@ -1,6 +1,7 @@
 import json
 import math
 import random
+import os
 
 import numpy as np
 from scipy.special import binom
@@ -8,6 +9,8 @@ from shapely.geometry import MultiPoint, Point, LineString
 from shapely.ops import nearest_points
 
 from utils.line_interpolation import interpolate_points
+
+root_dir = os.path.dirname(__file__)
 
 
 def bernstein(n, k, t):
@@ -29,7 +32,7 @@ class Segment:
         self.p2 = p2
         self.angle1 = angle1
         self.angle2 = angle2
-        self.numpoints = kw.get("numpoints", 100)
+        self.numpoints = kw.get("numpoints", 200)
         r = kw.get("r", 0.3)
         d = np.sqrt(np.sum((self.p2 - self.p1) ** 2))
         self.r = r * d
@@ -134,14 +137,23 @@ def generate_polygon(ctrX, ctrY, aveRadius, irregularity, spikeyness, numVerts):
 
 
 class Track:
+    """
+    Line follower follows a Track instance. This class contains methods for randomly generating, rendering and
+    calculating relative follower distance, speed and direction.
+    """
 
-    def __init__(self, pts, nb_checkpoints=100):
-        self.pts = np.array(pts)
-        self.x = pts[:, 0]
-        self.y = pts[:, 1]
+    def __init__(self, pts, nb_checkpoints=100, render_params=None):
+        l = LineString(pts).length
+        n = int(l / 3e-3)  # Get number of points for 3 mm spacing
 
-        self.mpt = MultiPoint(pts)
-        self.string = LineString(pts)
+        self.pts = interpolate_points(np.array(pts), n)  # interpolate points to get the right spacing
+        self.x = self.pts[:, 0]
+        self.y = self.pts[:, 1]
+
+        self.render_params = render_params
+
+        self.mpt = MultiPoint(self.pts)
+        self.string = LineString(self.pts)
 
         # Find starting point and angle
         self.start_xy = self.x[0], self.y[0]
@@ -150,10 +162,7 @@ class Track:
         # Get length
         self.length = self.string.length
 
-        # self.progress_points = interpolate_points(self.pts, segment_length=0.05)
-        # self.progress = 0
-        # self.next_progress_point = Point(self.progress_points[self.progress])
-
+        # Progress tracking setup
         self.progress = 0.
         self.progress_idx = 0
         self.nb_checkpoints = nb_checkpoints
@@ -163,9 +172,10 @@ class Track:
 
     @classmethod
     def generate(cls, approx_width=1., hw_ratio=0.5, seed=None, irregularity=0.2,
-                 spikeyness=0.2, numVerts=10, nb_checkpoints=100):
+                 spikeyness=0.2, num_verts=10, *args, **kwargs):
         """
         Generate random track.
+        Adapted from: https://stackoverflow.com/a/45618741/9908077
         :param approx_width: approx. width of generated track
         :param hw_ratio: ratio height / width
         :param seed: seed for random generator
@@ -175,7 +185,7 @@ class Track:
         random.seed(seed)
         upscale = 1000.  # upscale so curve gen fun works
         r = upscale * approx_width / 2.
-        pts = generate_polygon(0, 0, r, irregularity=irregularity, spikeyness=spikeyness, numVerts=numVerts)
+        pts = generate_polygon(0, 0, r, irregularity=irregularity, spikeyness=spikeyness, numVerts=num_verts)
         pts = np.array(pts)
 
         # Generate curve with points
@@ -192,53 +202,141 @@ class Track:
         x, y = x / unit_scale, y / unit_scale
         pts = np.stack((x, y), axis=-1)
 
+        # Check width / height:
+        if max(abs(min(x)), max(x)) * 2 > 1.5 * approx_width or max(abs(min(y)), max(y)) * 2 > 1.5 * approx_width * hw_ratio:
+            return cls.generate(approx_width, hw_ratio, seed, irregularity, spikeyness, num_verts, *args, **kwargs)
+
         # Randomly flip track direction
         if np.random.choice([True, False]):
             pts = np.flip(pts, axis=0)
-        return cls(pts, nb_checkpoints)
+        return cls(pts, *args, **kwargs)
 
     @classmethod
-    def from_file(cls, path):
+    def from_file(cls, path, *args, **kwargs):
         with open(path, "r") as f:
             d = json.load(f)
         points = d["points"]
         points.append(points[0])  # Close the loop
         points = interpolate_points(points, 1000)
-        return cls(points)
+        return cls(points, *args, **kwargs)
     
-    def render(self, w=3., h=2., ppm=1000, t=0.015, save=None):
+    def _render(self, w=3., h=2., ppm=1500, line_thickness=0.015, save=None, line_color="black",
+                background="white", line_opacity=0.8, dashed=False):
         """
         Render track using open-cv
         :param w: canvas width in meters
         :param h: canvas height in meters
         :param ppm: pixel per meter
-        :param t: line thickness in meters
+        :param line_thickness: line thickness in meters
         :param save: path to save
+        :param line_color: string or BGR tuple
+                           options: [black, red, green, blue]
+        :param background: string or BGR tuple
+                           options: [wood, wood_2, concrete, brick, checkerboard, white, gray]
+        :param line_opacity: opacity of line in range 0, 1 where 0 is fully transparent
         :return: rendered track image array
         """
         import cv2
         w_res = int(round(w * ppm))
         h_res = int(round(h * ppm))
-        t_res = int(round(t * ppm))
+        t_res = int(round(line_thickness * ppm))
 
-        img = np.ones((h_res, w_res, 3), dtype=np.uint8) * 255
+        background_bgr = None
+        if isinstance(background, str):
+            background = background.lower()
+            if background == "wood":
+                bg = cv2.imread(os.path.join(root_dir, "track_textures", "wood.jpg"))
+            elif background == "wood_2":
+                bg = cv2.imread(os.path.join(root_dir, "track_textures", "wood_2.jpg"))
+            elif background == "concrete":
+                bg = cv2.imread(os.path.join(root_dir, "track_textures", "concrete.jpg"))
+            elif background == "brick":
+                bg = cv2.imread(os.path.join(root_dir, "track_textures", "brick.jpg"))
+            elif background == "checkerboard":
+                bg = cv2.imread(os.path.join(root_dir, "track_textures", "checkerboard.jpg"))
+            elif background == "white":
+                background_bgr = (255, 255, 255)
+            elif background == "gray":
+                background_bgr = (150, 150, 150)
+            else:
+                raise ValueError("Invalid background string.")
 
-        for i in range(len(self.pts) - 1):
-            if i < 1:
-                continue
-            x1, y1 = self.pts[i]
-            x1_img = int(round((x1 + w / 2) * ppm, ndigits=0))
-            y1_img = int(round(h_res - (y1 + h / 2) * ppm, ndigits=0))
+            if background_bgr:
+                bg = np.ones((h_res, w_res, 3), dtype=np.uint8)
+                bg[:, :, 0] *= background_bgr[0]
+                bg[:, :, 1] *= background_bgr[1]
+                bg[:, :, 2] *= background_bgr[2]
+            else:
+                bg = cv2.resize(bg, (w_res, h_res), interpolation=cv2.INTER_LINEAR)
 
-            x2, y2 = self.pts[i + 1]
-            x2_img = int(round((x2 + w / 2) * ppm, ndigits=0))
-            y2_img = int(round(h_res - (y2 + h / 2) * ppm, ndigits=0))
+        elif isinstance(background, tuple):
+            bg = np.ones((h_res, w_res, 3), dtype=np.uint8)
+            bg[:, :, 0] *= background[0]
+            bg[:, :, 1] *= background[1]
+            bg[:, :, 2] *= background[2]
+        else:
+            raise ValueError("Invalid background.")
 
-            cv2.line(img, (x1_img, y1_img), (x2_img, y2_img), color=(0, 0, 0), thickness=t_res,
-                     lineType=cv2.LINE_AA)
+        if isinstance(line_color, str):
+            line_color = line_color.lower()
+            if line_color == "black":
+                line_bgr = (0, 0, 0)
+            elif line_color == "red":
+                line_bgr = (0, 0, 255)
+            elif line_color == "green":
+                line_bgr = (0, 128, 0)
+            elif line_color == "blue":
+                line_bgr = (255, 0, 0)
+            else:
+                raise ValueError("Invalid color string.")
+        elif isinstance(line_color, tuple):
+            line_bgr = line_color
+        else:
+            raise ValueError("Invalid line_color.")
+
+        line = bg.copy()
+
+        if dashed:
+            pts = interpolate_points(self.pts, 1000)
+            n = self.length / dashed
+            chunks = np.array_split(pts, n)[::2]
+            for c in chunks:
+                for i in range(len(c) - 1):
+                    x1, y1 = c[i]
+                    x1_img = int(round((x1 + w / 2) * ppm, ndigits=0))
+                    y1_img = int(round(h_res - (y1 + h / 2) * ppm, ndigits=0))
+
+                    x2, y2 = c[i + 1]
+                    x2_img = int(round((x2 + w / 2) * ppm, ndigits=0))
+                    y2_img = int(round(h_res - (y2 + h / 2) * ppm, ndigits=0))
+
+                    cv2.line(line, (x1_img, y1_img), (x2_img, y2_img), color=line_bgr, thickness=t_res,
+                             lineType=cv2.LINE_AA)
+        else:
+            for i in range(len(self.pts) - 1):
+                x1, y1 = self.pts[i]
+                x1_img = int(round((x1 + w / 2) * ppm, ndigits=0))
+                y1_img = int(round(h_res - (y1 + h / 2) * ppm, ndigits=0))
+
+                x2, y2 = self.pts[i + 1]
+                x2_img = int(round((x2 + w / 2) * ppm, ndigits=0))
+                y2_img = int(round(h_res - (y2 + h / 2) * ppm, ndigits=0))
+
+                cv2.line(line, (x1_img, y1_img), (x2_img, y2_img), color=line_bgr, thickness=t_res,
+                         lineType=cv2.LINE_AA)
+
+        alpha = line_opacity
+        out = cv2.addWeighted(line, alpha, bg, 1 - alpha, 0)
+
         if save is not None:
-            cv2.imwrite(save, img)
-        return img
+            cv2.imwrite(save, out)
+        return out
+
+    def render(self, *args, **kwargs):
+        if self.render_params:
+            return self._render(*args, **kwargs, **self.render_params)
+        else:
+            return self._render(*args, **kwargs)
 
     def distance_from_point(self, pt):
         """
@@ -409,11 +507,8 @@ class Track:
 if __name__ == '__main__':
     t = Track.generate(2.0, hw_ratio=0.7, seed=4125,
                        spikeyness=0.2, nb_checkpoints=500)
-    # print(t.length)
-    # print(t.length_between_idx(10, 20, shortest=True))
 
     import matplotlib.pyplot as plt
-    t = Track.from_file("track_1_edit.json")
     img = t.render()
     plt.imshow(img)
     plt.show()

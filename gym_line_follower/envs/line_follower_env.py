@@ -26,8 +26,9 @@ def fig2rgb_array(fig):
 class LineFollowerEnv(gym.Env):
     metadata = {"render.modes": ["human", "gui", "rgb_array"]}
 
-    def __init__(self, gui=True, nb_cam_pts=8, sub_steps=10, sim_time_step=1/250,
-                 max_track_err=0.3, speed_limit=0.4, max_time=60, config=None, randomize=True, obsv_type="latch"):
+    def __init__(self, gui=True, nb_cam_pts=8, sub_steps=10, sim_time_step=1 / 250,
+                 max_track_err=0.3, speed_limit=0.4, max_time=60, config=None, randomize=True, obsv_type="latch",
+                 track=None, track_render_params=None):
         self.local_dir = os.path.dirname(os.path.dirname(__file__))
 
         if config is None:
@@ -47,20 +48,26 @@ class LineFollowerEnv(gym.Env):
 
         self.randomize = randomize
         self.obsv_type = obsv_type.lower()
+        self.track_render_params = track_render_params
+        self.preset_track = track
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
         if self.obsv_type == "visible":
-            self.observation_space = spaces.Box(low=np.array([0.0, -0.2, 0.]*self.nb_cam_pts),
-                                                high=np.array([0.2, 0.2, 1.]*self.nb_cam_pts),
+            self.observation_space = spaces.Box(low=np.array([0.0, -0.2, 0.] * self.nb_cam_pts),
+                                                high=np.array([0.3, 0.2, 1.] * self.nb_cam_pts),
                                                 dtype=np.float32)
         elif self.obsv_type == "latch":
             self.observation_space = spaces.Box(low=np.array([0.0, -0.2] * self.nb_cam_pts),
-                                                high=np.array([0.2, 0.2] * self.nb_cam_pts),
+                                                high=np.array([0.3, 0.2] * self.nb_cam_pts),
                                                 dtype=np.float32)
         elif self.obsv_type == "latch_bool":
-            self.observation_space = spaces.Box(low=np.array([np.array([0.0, -0.2] * self.nb_cam_pts), 0.]),
-                                                high=np.array([np.array([0.2, 0.2] * self.nb_cam_pts), 1.]),
+            low = [0.0, -0.2] * self.nb_cam_pts
+            low.append(0.)
+            high = [0.3, 0.2] * self.nb_cam_pts
+            high.append(1.0)
+            self.observation_space = spaces.Box(low=np.array(low),
+                                                high=np.array(high),
                                                 dtype=np.float32)
 
         self.pb_client: p = BulletClient(connection_mode=p.GUI if self.gui else p.DIRECT)
@@ -93,14 +100,21 @@ class LineFollowerEnv(gym.Env):
         self.pb_client.setTimeStep(self.sim_time_step)
         self.pb_client.setGravity(0, 0, -9.81)
 
-        self.track = Track.generate(2.0, hw_ratio=0.7, seed=None if self.randomize else 4125,
-                                    spikeyness=0.2, nb_checkpoints=500)
+        if self.randomize:
+            if self.track_render_params:
+                self.track_render_params.randomize()
+
+        if self.preset_track:
+            self.track = self.preset_track
+        else:
+            self.track = Track.generate(1.75, hw_ratio=0.7, seed=None if self.randomize else 4125,
+                                        spikeyness=0.3, nb_checkpoints=500, render_params=self.track_render_params)
 
         start_yaw = self.track.start_angle
         if self.randomize:
-            start_yaw += np.random.uniform(-0.5, 0.5)
+            start_yaw += np.random.uniform(-0.2, 0.2)
 
-        build_track_plane(self.track, width=3, height=2.5, ppm=1000, path=self.local_dir)
+        build_track_plane(self.track, width=3, height=2.5, ppm=1500, path=self.local_dir)
         self.pb_client.loadURDF(os.path.join(self.local_dir, "track_plane.urdf"))
         self.follower_bot = LineFollowerBot(self.pb_client, self.nb_cam_pts, self.track.start_xy, start_yaw,
                                             self.config, obsv_type=self.obsv_type)
@@ -117,7 +131,10 @@ class LineFollowerEnv(gym.Env):
         if len(obsv) < 1:
             return self.reset()  # TODO: maybe add recursion limit
         else:
-            return self.follower_bot.step(self.track)
+            obsv = self.follower_bot.step(self.track)
+            if self.obsv_type == "latch_bool":
+                obsv = [obsv, 1.]
+            return obsv
 
     def step(self, action):
         action = self.speed_limit * np.array(action)
@@ -160,7 +177,7 @@ class LineFollowerEnv(gym.Env):
         checkpoint_reward = 1000. / self.track.nb_checkpoints
         if self.position_on_track - self.track.progress < 0.4:
             checkpoints_reached = self.track.update_progress(self.position_on_track)
-            reward += checkpoints_reached * checkpoint_reward * (1.0 - track_err_norm)**2
+            reward += checkpoints_reached * checkpoint_reward * (1.0 - track_err_norm) ** 2
 
         # Time penalty
         reward -= 0.2
@@ -187,12 +204,7 @@ class LineFollowerEnv(gym.Env):
         return observation, reward, done, info
 
     def render(self, mode='human'):
-        if mode == "gui":
-            while time() - self._render_time < 1/25:
-                sleep(0.001)
-            self._render_time = time()
-            return
-
+        # mode = "pov"  # TODO remove
         if self.plot is None and mode in ["human", "rgb_array"]:
             global plt
             import matplotlib
@@ -229,35 +241,42 @@ class LineFollowerEnv(gym.Env):
                          "vis_pts_line": vis_pts_line,
                          "progress_line": progress_line}
 
-        # Plot data
-        (x, y), yaw = self.follower_bot.get_position()
-        self.plot["pos_line"].set_xdata(x)
-        self.plot["pos_line"].set_ydata(y)
+        if mode in ["human", "rgb_array"]:
+            # Plot data
+            (x, y), yaw = self.follower_bot.get_position()
+            self.plot["pos_line"].set_xdata(x)
+            self.plot["pos_line"].set_ydata(y)
 
-        self.plot["win_line"].set_xdata(self.follower_bot.cam_window.plottable[0])
-        self.plot["win_line"].set_ydata(self.follower_bot.cam_window.plottable[1])
+            self.plot["win_line"].set_xdata(self.follower_bot.cam_window.plottable[0])
+            self.plot["win_line"].set_ydata(self.follower_bot.cam_window.plottable[1])
 
-        if self.obsv_type == "visible":
-            vis_pts = np.array(self.observation).reshape((-1, 3))
-        elif self.obsv_type in ["latch", "latch_bool"]:
-            vis_pts = np.array(self.observation).reshape((-1, 2))
-        else:
-            vis_pts = np.array(self.observation).reshape((-1, 2))
+            if self.obsv_type == "visible":
+                vis_pts = np.array(self.observation).reshape((-1, 3))
+            elif self.obsv_type in ["latch", "latch_bool"]:
+                vis_pts = np.array(self.observation).reshape((-1, 2))
+            else:
+                vis_pts = np.array(self.observation).reshape((-1, 2))
 
-        self.plot["vis_pts_line"].set_xdata(vis_pts[:, 0])
-        self.plot["vis_pts_line"].set_ydata(vis_pts[:, 1])
+            self.plot["vis_pts_line"].set_xdata(vis_pts[:, 0])
+            self.plot["vis_pts_line"].set_ydata(vis_pts[:, 1])
 
-        self.plot["track_ref_line"].set_xdata(self.follower_bot.track_ref_point.plottable[0])
-        self.plot["track_ref_line"].set_ydata(self.follower_bot.track_ref_point.plottable[1])
+            self.plot["track_ref_line"].set_xdata(self.follower_bot.track_ref_point.plottable[0])
+            self.plot["track_ref_line"].set_ydata(self.follower_bot.track_ref_point.plottable[1])
 
-        self.plot["progress_line"].set_xdata(self.track.pts[0:self.track.progress_idx, 0])
-        self.plot["progress_line"].set_ydata(self.track.pts[0:self.track.progress_idx, 1])
+            self.plot["progress_line"].set_xdata(self.track.pts[0:self.track.progress_idx, 0])
+            self.plot["progress_line"].set_ydata(self.track.pts[0:self.track.progress_idx, 1])
 
         if mode == "human":
             plt.draw()
         elif mode == "rgb_array":
             img = fig2rgb_array(self.plot["fig"])
             return img
+        elif mode == "gui":  # Sleep to make GUI realtime
+            while time() - self._render_time < 1 / 25:
+                sleep(0.001)
+            self._render_time = time()
+        elif mode == "pov":
+            return self.get_pov_image()
         else:
             super(LineFollowerEnv, self).render(mode=mode)
 
@@ -285,6 +304,26 @@ class LineFollowerEnv(gym.Env):
         # Project velocity vector to unit track vector
         return np.dot(v, track_vect)
 
+    def get_pov_image(self):
+        cam_x, cam_y = self.follower_bot.cam_pos_point.get_xy()
+        cam_z = 0.095
+        target_x, target_y = self.follower_bot.cam_target_point.get_xy()
+        vm = self.pb_client.computeViewMatrix(cameraEyePosition=[cam_x, cam_y, cam_z],
+                                              cameraTargetPosition=[target_x, target_y, 0.0],
+                                              cameraUpVector=[0.0, 0.0, 1.0])
+        pm = self.pb_client.computeProjectionMatrixFOV(fov=49,
+                                                       aspect=320 / 240,
+                                                       nearVal=0.0001,
+                                                       farVal=1)
+        w, h, rgb, deth, seg = self.pb_client.getCameraImage(width=320,
+                                                             height=240,
+                                                             viewMatrix=vm,
+                                                             projectionMatrix=pm,
+                                                             renderer=p.ER_BULLET_HARDWARE_OPENGL)
+        rgb = np.array(rgb)
+        rgb = rgb[:, :, :3]
+        return rgb
+
 
 if __name__ == '__main__':
 
@@ -293,7 +332,7 @@ if __name__ == '__main__':
     for _ in range(100):
         for i in range(1000):
             obsv, rew, done, info = env.step((0., 0.))
-            env.render("human")
+            env.render("pov")
             sleep(0.05)
             if done:
                 break
