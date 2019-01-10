@@ -1,3 +1,6 @@
-**Line Follower Gym Environment**
+# Line Follower Gym Environment
 
-Readme to be added soon.
+Line follower robot simulator environment for Open AI Gym.
+
+![Simulation Environment](sim_env.gif)
+

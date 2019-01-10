@@ -73,6 +73,7 @@ class LineFollowerEnv(gym.Env):
         self.pb_client: p = BulletClient(connection_mode=p.GUI if self.gui else p.DIRECT)
         self.pb_client.setPhysicsEngineParameter(enableFileCaching=0)
         p.resetDebugVisualizerCamera(cameraDistance=2.6, cameraYaw=45, cameraPitch=-45, cameraTargetPosition=[0, 0, 0])
+        p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 
         self.np_random = None
         self.step_counter = 0
@@ -204,7 +205,6 @@ class LineFollowerEnv(gym.Env):
         return observation, reward, done, info
 
     def render(self, mode='human'):
-        # mode = "pov"  # TODO remove
         if self.plot is None and mode in ["human", "rgb_array"]:
             global plt
             import matplotlib
