@@ -2,4 +2,4 @@
 
 Line follower robot simulator environment for Open AI Gym.
 
-![Simulation Environment](media/sim_env.gif)
+<img src="media/sim_env.gif" width="500">
