@@ -37,7 +37,7 @@ pip3 install gym_line_follower -e
 installed in place and is editable.
 
 ## Usage
-Load the einvronment as usual.
+Load the environment as usual.
 ``` python
 import gym
 env = gym.make("LineFollower-v0")
