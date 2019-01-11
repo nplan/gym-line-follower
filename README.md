@@ -42,7 +42,7 @@ env = gym.make("LineFollower-v0")
 
  ## Environments
  Only one environment is currently registered. Custom environments can be quickly built using the class
- ### line-follower-v0
+ ### LineFollower-v0
  Line follower is placed at the beginning of a closed loop line track. The objective is to follow the track as quickly
  and accurately as possible. Progress is measured in percent of track driven. Episode finishes when the track
  is completed (whole loop driven), the follower gets to far from the track or when the follower goes to far from
