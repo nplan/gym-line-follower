@@ -24,7 +24,7 @@ def fig2rgb_array(fig):
 
 
 class LineFollowerEnv(gym.Env):
-    metadata = {"render.modes": ["human", "gui", "rgb_array"]}
+    metadata = {"render.modes": ["human", "gui", "rgb_array", "pov"]}
 
     def __init__(self, gui=True, nb_cam_pts=8, sub_steps=10, sim_time_step=1 / 250,
                  max_track_err=0.3, speed_limit=0.4, max_time=60, config=None, randomize=True, obsv_type="latch",
