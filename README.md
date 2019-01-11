@@ -84,9 +84,10 @@ env = gym.make("LineFollower-v0")
  - ```"human"``` - display a live matplotlib plot with 2D representation of line track and visible representation points
  <img src="media/human_render_mode.png" width="400">
  
- - ```"rgb_array"``` - same as *"human"* but return an RGB image array instead of displaying plot.
-  <img src="media/pov_render_mode.png" width="300">
-  
+ - ```"rgb_array"``` - same as *"human"* but return an RGB image array instead of displaying plot.  
+ 
  - ```"pov"``` - return an RGB image array from a forward facing point-of-view camera.
+ <img src="media/pov_render_mode.png" width="300">
+
  - ```"gui"``` - make the *pybullet* GUI run at real-time FPS.
  
