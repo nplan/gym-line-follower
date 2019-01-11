@@ -94,7 +94,7 @@ env = gym.make("LineFollower-v0")
  
  ## Configuration and Randomization
 
-You can configure the simulator with parameters inside the file ```bot_config.json```. Randomization at the beginning of
+The simulator can be configured with parameters inside the file ```bot_config.json```. Randomization at the beginning of
 each episode can be enabled for each parameter. You must format the json file according to the following rules:
  
  >If value randomization at a key is desired, provided value must be a dict with entries:
