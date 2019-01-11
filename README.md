@@ -14,6 +14,9 @@ drive robots.
 The line is represented by points inside a field-of-view window in front of the follower robot, as it would be
 seen by a forward-facing camera on board. Rendering of a point-of-view camera image is supported.
 
+<img src="media/line_representation.png" width="450">
+
+
 This simulator was created as a part of masters thesis done at [FS-UNI-LJ](https://www.fs.uni-lj.si/).
 
 ## Installation
