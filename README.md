@@ -15,6 +15,7 @@ The line is represented by points inside a field-of-view window in front of the 
 seen by a forward-facing camera on board. Rendering of a point-of-view camera image is supported.
 
 <img src="media/line_representation.png" width="450">
+Left: line track with progress marked green, Right: Camera field of view with line representation points in cyan.
 
 ---
 
@@ -100,7 +101,7 @@ env = gym.make("LineFollower-v0")
  
  >If value randomization at a key is desired, provided value must be a dict with entries:
  > - 'range': [a, b] - random uniform sample in range a, b
- > - 'choice': [a, b, c, d, ...] - random choice of one value from list
+ > - 'choice': [a, b, c, d, ...] - random choice of one value from the list
  > - 'default': a - default value
  
  >   Default value must always be provided. One of keys 'range' or 'choice' must be provided.
