@@ -18,7 +18,8 @@ seen by a forward-facing camera on board. Rendering of a point-of-view camera im
 
 ---
 
-This simulator was created as a part of masters thesis done at [FS-UNI-LJ](https://www.fs.uni-lj.si/).
+This simulator was created as a part of masters thesis at 
+[Faculty of Mechanical Engineering, University of Ljubljana](https://www.fs.uni-lj.si/).
 
 
 
@@ -36,7 +37,7 @@ git clone https://github.com/nplan/gym-line-follower.git
 cd gym_line_follower
 pip3 install gym_line_follower -e
 ```
-> Requirements will be installed automatically. Using ````-e```` the environment is
+> Requirements will be installed automatically. By using ````-e```` the environment is
 installed in place and is editable.
 
 ## Usage
@@ -94,8 +95,8 @@ env = gym.make("LineFollower-v0")
  
  ## Configuration and Randomization
 
-The simulator can be configured with parameters inside the file ```bot_config.json```. Randomization at the beginning of
-each episode can be enabled for each parameter. You must format the json file according to the following rules:
+ The simulator can be configured with parameters inside the file ```bot_config.json```. Randomization at the beginning of
+ each episode can be enabled for each parameter. You must format the json file according to the following rules:
  
  >If value randomization at a key is desired, provided value must be a dict with entries:
  > - 'range': [a, b] - random uniform sample in range a, b
@@ -123,3 +124,19 @@ each episode can be enabled for each parameter. You must format the json file ac
 
  - ```"gui"``` - make the *pybullet* GUI run at real-time FPS.
  
+ ## Track rendering randomization
+ Line track can be rendered with different colors and background (floor) textures. This is not enabled by
+ default. Desired parameters can be set in ```track_render_config.json``` file, which must be formatted in the same 
+ way as described in *Configuration and Randomization* section. 
+ 
+ <img src="media/track_render_options.gif" width="400">
+ 
+ Track rendering randomization
+ can be enabled as following:
+ ``` python
+ render_params = RandomizerDict(json.load(open("track_render_config.json", "r")))
+ env = LineFollowerEnv(track_render_params=render_params)
+ ```
+ 
+ >This future can be used in combination with ```"pov"``` render mode for automatic generation of labeled image data, 
+ that can be used for training a line detector neural network.
