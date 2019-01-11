@@ -11,13 +11,14 @@ reinforcement learning. The simulator is written in Python and uses Pybullet eng
 physics simulation. Gym-Line-Follower is fast and customizable. It currently supports differential
 drive robots.
 
+This simulator was created as a part of masters thesis done at [FS-UNI-LJ](https://www.fs.uni-lj.si/).
+
+
 The line is represented by points inside a field-of-view window in front of the follower robot, as it would be
 seen by a forward-facing camera on board. Rendering of a point-of-view camera image is supported.
 
 <img src="media/line_representation.png" width="450">
 
-
-This simulator was created as a part of masters thesis done at [FS-UNI-LJ](https://www.fs.uni-lj.si/).
 
 ## Installation
 Requirements:
@@ -44,12 +45,16 @@ env = gym.make("LineFollower-v0")
 ```
 
  ## Environments
- Only one environment is currently registered. Custom environments can be quickly built using the class
  ### LineFollower-v0
  Line follower is placed at the beginning of a closed loop line track. The objective is to follow the track as quickly
  and accurately as possible. Progress is measured in percent of track driven. Episode finishes when the track
  is completed (whole loop driven), the follower gets to far from the track or when the follower goes to far from
  the last progress point in the wrong direction.
+ 
+ **Randomization:**
+ Line track is generated randomly at the start of each episode
+ and the starting angle of follower bot relative to the track is sampled from interval *(-0.2, 0.2) rad*.
+ Other parameters are fixed and are specified in files ```bot_config.json``` and ```follower_bot.urdf```.
  
  **Observation Space:**
  *Box(8, 2)* - 8 points with *(x, y)* coordinates representing line. Origin of the coordinate system is the robots
@@ -59,8 +64,8 @@ env = gym.make("LineFollower-v0")
  *Box(2)* - 2 values representing left and right motor power in range *(-1, 1)*.
  
  **Reward:**
- Track is split in 500 checkpoints that must be reach for the episode to complete successfully.
- When a checkpoint is reached a reward is calculated using the following equations:
+ Track is split in 500 checkpoints that must be reached for the episode to complete successfully.
+ When a checkpoint is reached, a reward is calculated using the following equations:
  ```
  checkpoint_reward = 1000. / nb_checkpoints
  track_error_norm = track_err * (1.0 / max_track_error)
@@ -69,7 +74,9 @@ env = gym.make("LineFollower-v0")
  Where ```nb_checkpoints``` is number of track checkpoints (500), ```track_error``` is distance between follower bot 
  center of rotation and the closes point on track, ```max_track_error``` is maximum allowed *track_error*.
  
- At each step a value of 0.2 is deducted from reward to encourage quick completion of the track.
+ At each step a value of 0.2 is subtracted from reward to encourage quick completion of the track.
+ 
+ If the episode finishes before the track is complete, a reward of -100 is given.
  
  
  ## Customized environments
@@ -83,8 +90,28 @@ env = gym.make("LineFollower-v0")
  ```
  > Description of arguments is provided in source code.
  
+ ## Configuration and Randomization
+
+You can configure the simulator with parameters inside the file ```bot_config.json```. Randomization at the beginning of
+each episode can be enabled for each parameter. You must format the json file according to the following rules:
+ 
+ >If value randomization at a key is desired, provided value must be a dict with entries:
+ > - 'range': [a, b] - random uniform sample in range a, b
+ > - 'choice': [a, b, c, d, ...] - random choice of one value from list
+ > - 'default': a - default value
+ 
+ >   Default value must always be provided. One of keys 'range' or 'choice' must be provided.
+ >   If value at key is not a dict no randomization is performed.
+ 
+ Randomization is enabled with the ```randomize``` parameter.
+ 
+ >*WARNING*: Randomization is not yet working to the full extent. Some parameters are still hardcoded
+ inside the file ```follower_bot.urdf```. The code to dynamically build this file from parameters inside 
+ ```bot_config.json``` will be added in the future.
+ 
+
  ## Render options
- - ```"human"``` - display a live matplotlib plot with 2D representation of line track and visible representation points
+ - ```"human"``` - display a live *matplotlib* plot with 2D representation of line track and representation points.
  <img src="media/human_render_mode.png" width="400">
  
  - ```"rgb_array"``` - same as *"human"* but return an RGB image array instead of displaying plot.  
