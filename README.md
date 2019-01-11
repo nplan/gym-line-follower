@@ -85,6 +85,8 @@ env = gym.make("LineFollower-v0")
  <img src="media/human_render_mode.png" width="400">
  
  - ```"rgb_array"``` - same as *"human"* but return an RGB image array instead of displaying plot.
+  <img src="media/pov_render_mode.png" width="300">
+  
  - ```"pov"``` - return an RGB image array from a forward facing point-of-view camera.
  - ```"gui"``` - make the *pybullet* GUI run at real-time FPS.
  
