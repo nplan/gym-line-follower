@@ -11,11 +11,12 @@ reinforcement learning. The simulator is written in Python and uses Pybullet eng
 physics simulation. Gym-Line-Follower is fast and customizable. It currently supports differential
 drive robots.
 
-The line is represented by points inside a field-of-view window in front of the follower robot, as it would be
-seen by a forward-facing camera on board. Rendering of a point-of-view camera image is supported.
+The line is represented by points inside a field of view window in front of the follower robot, as it would be
+seen by a forward facing camera on board. Rendering of a point of view camera image is supported.
 
 <img src="media/line_representation.png" width="450">
-Left: line track with progress marked green, Right: Camera field of view with line representation points in cyan.
+Left: Track with progress marked green, Right: Camera field of view (magenta) with line representation
+ points (cyan).
 
 ---
 
@@ -50,7 +51,7 @@ env = gym.make("LineFollower-v0")
 
  ## Environments
  ### LineFollower-v0
- Line follower is placed at the beginning of a closed loop line track. The objective is to follow the track as quickly
+ Line follower is placed at the beginning of a closed loop track. The objective is to follow the track as quickly
  and accurately as possible. Progress is measured in percent of track driven. Episode finishes when the track
  is completed (whole loop driven), the follower gets to far from the track or when the follower goes to far from
  the last progress point in the wrong direction.
@@ -126,7 +127,7 @@ env = gym.make("LineFollower-v0")
  - ```"gui"``` - make the *pybullet* GUI run at real-time FPS.
  
  ## Track rendering randomization
- Line track can be rendered with different colors and background (floor) textures. This is not enabled by
+ Track can be rendered with different colors and background (floor) textures. This is not enabled by
  default. Desired parameters can be set in ```track_render_config.json``` file, which must be formatted in the same 
  way as described in *Configuration and Randomization* section. 
  
