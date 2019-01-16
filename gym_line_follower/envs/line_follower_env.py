@@ -29,8 +29,32 @@ class LineFollowerEnv(gym.Env):
     SUPPORTED_OBSV_TYPE = ["points_visible", "points_latch", "points_latch_bool", "camera"]
 
     def __init__(self, gui=True, nb_cam_pts=8, sub_steps=10, sim_time_step=1 / 250,
-                 max_track_err=0.3, speed_limit=0.4, max_time=60, config=None, randomize=True, obsv_type="points_latch",
+                 max_track_err=0.3, power_limit=0.4, max_time=60, config=None, randomize=True, obsv_type="points_latch",
                  track=None, track_render_params=None):
+        """
+        Create environment.
+        :param gui: True to enable pybullet OpenGL GUI
+        :param nb_cam_pts: number of line representation points
+        :param sub_steps: number of pybullet simulation steps per one environment step
+        :param sim_time_step: pybullet simulation time step
+        :param max_track_err: maximum distance of bot from the line before signaling episode done
+        :param power_limit: limit the robot motor power, should be in range (0, 1) where 1 is not limited
+        :param max_time: maximum episode time in seconds. Episodes finishes when max time is greater
+        :param config: config dict. If none, 'bot_config.json' is loaded
+        :param randomize: when True, track is generated randomly at each episode start,
+        :param obsv_type: type of line observation generated:
+                            "points_visible" - returns array shape (nb_cam_pts, 3)  - each line point has 3 parameters
+                                [x, y, visibility] where visibility is 1.0 if point is visible in camera window
+                                and 0.0 if not.
+                            "points_latch" - returns array length nb_cam_points if at least 2 line points are visible in
+                                camera window, returns empty array otherwise
+                            "points_latch_bool" - same as "latch" with one additional value to indicate if line is
+                                visible or not (0 or 1)
+                            "camera" - return (240, 320, 3) camera image RGB array
+        :param track: Optional track instance to use. If none track is generated randomly.
+        :param track_render_params: Track render parameters dict.
+        """
+
         self.local_dir = os.path.dirname(os.path.dirname(__file__))
 
         if config is None:
@@ -44,7 +68,7 @@ class LineFollowerEnv(gym.Env):
         self.sub_steps = sub_steps
         self.sim_time_step = sim_time_step
         self.max_track_err = max_track_err
-        self.speed_limit = speed_limit
+        self.speed_limit = power_limit
         self.max_time = max_time
         self.max_steps = max_time / (sim_time_step * sub_steps)
 
@@ -323,7 +347,7 @@ class LineFollowerCameraEnv(LineFollowerEnv):
 
 if __name__ == '__main__':
 
-    env = LineFollowerEnv(gui=True, nb_cam_pts=8, max_track_err=0.4, speed_limit=0.4, max_time=600, obsv_type="points_latch")
+    env = LineFollowerEnv(gui=True, nb_cam_pts=8, max_track_err=0.4, power_limit=0.4, max_time=600, obsv_type="points_latch")
     env.reset()
     for _ in range(100):
         for i in range(1000):

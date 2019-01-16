@@ -40,7 +40,7 @@ class LineFollowerBot:
         self.local_dir = os.path.dirname(__file__)
         self.config = config
 
-        self.pb_client: pybullet = pb_client
+        self.pb_client: p = pb_client
         self.bot = None
 
         self.prev_pos = ((0., 0.), 0.)
@@ -191,6 +191,11 @@ class LineFollowerBot:
             return self.get_pov_image()
 
     def _set_wheel_torque(self, l_torque, r_torque):
+        """
+        Apply torque to simulated wheels.
+        :param l_torque: left wheel torque in Nm
+        :param r_torque: right wheel torque in Nm
+        """
         l_torque *= MOTOR_DIRECTIONS["left"]
         r_torque *= MOTOR_DIRECTIONS["right"]
         self.pb_client.setJointMotorControl2(self.bot,
@@ -202,10 +207,16 @@ class LineFollowerBot:
                                              controlMode=self.pb_client.TORQUE_CONTROL,
                                              force=r_torque)
 
-    def _pwm_to_volts(self, l_pwm, r_pwm):
-        l_pwm = np.clip(l_pwm, -1., 1.)
-        r_pwm = np.clip(r_pwm, -1., 1.)
-        return l_pwm * self.volts, r_pwm * self.volts
+    def _power_to_volts(self, l_pow, r_pow):
+        """
+        Convert power to volts
+        :param l_pow:
+        :param r_pow:
+        :return:
+        """
+        l_pow = np.clip(l_pow, -1., 1.)
+        r_pow = np.clip(r_pow, -1., 1.)
+        return l_pow * self.volts, r_pow * self.volts
 
     def apply_action(self, action):
         """
@@ -213,7 +224,7 @@ class LineFollowerBot:
         :param action:
         :return: None
         """
-        l_volts, r_volts = self._pwm_to_volts(*action)
+        l_volts, r_volts = self._power_to_volts(*action)
         l_vel, r_vel = self._get_wheel_velocity()
         l_vel *= MOTOR_DIRECTIONS["left"]
         r_vel *= MOTOR_DIRECTIONS["right"]
