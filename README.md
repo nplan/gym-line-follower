@@ -11,8 +11,8 @@ reinforcement learning. The simulator is written in Python and uses Pybullet eng
 physics simulation. Gym-Line-Follower is fast and customizable. It currently supports differential
 drive robots.
 
-The line is represented by points inside a field of view window in front of the follower robot, as it would be
-seen by a forward facing camera on board. Rendering of a point of view camera image is supported.
+Observation can either be a point sequence representing line in front of the robot
+or a robot point of view camera image.
 
 <img src="media/line_representation.png" width="450">
 Left: Track with progress marked green, Right: Camera field of view (magenta) with line representation
@@ -83,9 +83,12 @@ env = gym.make("LineFollower-v0")
  
  If the episode finishes before the track is complete, a reward of -100 is given.
  
+ ### LineFollowerCamera-v0
+ Same as *LineFollower-v0* except observation is returned as a RGB image array shape (240, 320, 3) type uint8.
+ 
  
  ## Customized environments
- Only one environment is currently registered. Custom environments can be quickly built by making the environment
+ Custom environments can be quickly built by making the environment
  using the class constructor with arguments.
  
  ``` python

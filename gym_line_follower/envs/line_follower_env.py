@@ -26,8 +26,10 @@ def fig2rgb_array(fig):
 class LineFollowerEnv(gym.Env):
     metadata = {"render.modes": ["human", "gui", "rgb_array", "pov"]}
 
+    SUPPORTED_OBSV_TYPE = ["points_visible", "points_latch", "points_latch_bool", "camera"]
+
     def __init__(self, gui=True, nb_cam_pts=8, sub_steps=10, sim_time_step=1 / 250,
-                 max_track_err=0.3, speed_limit=0.4, max_time=60, config=None, randomize=True, obsv_type="latch",
+                 max_track_err=0.3, speed_limit=0.4, max_time=60, config=None, randomize=True, obsv_type="points_latch",
                  track=None, track_render_params=None):
         self.local_dir = os.path.dirname(os.path.dirname(__file__))
 
@@ -53,15 +55,18 @@ class LineFollowerEnv(gym.Env):
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
-        if self.obsv_type == "visible":
+        if self.obsv_type not in self.SUPPORTED_OBSV_TYPE:
+            raise ValueError("Observation type '{}' not supported.".format(self.obsv_type))
+
+        if self.obsv_type == "points_visible":
             self.observation_space = spaces.Box(low=np.array([0.0, -0.2, 0.] * self.nb_cam_pts),
                                                 high=np.array([0.3, 0.2, 1.] * self.nb_cam_pts),
                                                 dtype=np.float32)
-        elif self.obsv_type == "latch":
+        elif self.obsv_type == "points_latch":
             self.observation_space = spaces.Box(low=np.array([0.0, -0.2] * self.nb_cam_pts),
                                                 high=np.array([0.3, 0.2] * self.nb_cam_pts),
                                                 dtype=np.float32)
-        elif self.obsv_type == "latch_bool":
+        elif self.obsv_type == "points_latch_bool":
             low = [0.0, -0.2] * self.nb_cam_pts
             low.append(0.)
             high = [0.3, 0.2] * self.nb_cam_pts
@@ -69,6 +74,8 @@ class LineFollowerEnv(gym.Env):
             self.observation_space = spaces.Box(low=np.array(low),
                                                 high=np.array(high),
                                                 dtype=np.float32)
+        elif self.obsv_type == "camera":
+            self.observation_space = spaces.Box(low=0, high=255, shape=(240, 320, 3), dtype=np.uint8)
 
         self.pb_client: p = BulletClient(connection_mode=p.GUI if self.gui else p.DIRECT)
         self.pb_client.setPhysicsEngineParameter(enableFileCaching=0)
@@ -152,21 +159,24 @@ class LineFollowerEnv(gym.Env):
         # Bot position updated here so it must be first!
         observation = self.follower_bot.step(self.track)
 
-        if self.obsv_type == "visible":
+        if self.obsv_type == "points_visible":
             self.observation = observation
 
-        elif self.obsv_type == "latch":
+        elif self.obsv_type == "points_latch":
             if len(observation) == 0:
                 observation = self.observation
             else:
                 self.observation = observation
 
-        elif self.obsv_type == "latch_bool":
+        elif self.obsv_type == "points_latch_bool":
             if len(observation) == 0:
                 observation = [self.observation, 0.]
             else:
                 self.observation = observation
                 observation = [observation, 1.]
+
+        elif self.obsv_type == "camera":
+            self.observation = observation
 
         # Track distance error
         track_err = self.track.distance_from_point(self.follower_bot.pos[0])
@@ -276,7 +286,7 @@ class LineFollowerEnv(gym.Env):
                 sleep(0.001)
             self._render_time = time()
         elif mode == "pov":
-            return self.get_pov_image()
+            return self.follower_bot.get_pov_image()
         else:
             super(LineFollowerEnv, self).render(mode=mode)
 
@@ -304,35 +314,20 @@ class LineFollowerEnv(gym.Env):
         # Project velocity vector to unit track vector
         return np.dot(v, track_vect)
 
-    def get_pov_image(self):
-        cam_x, cam_y = self.follower_bot.cam_pos_point.get_xy()
-        cam_z = 0.095
-        target_x, target_y = self.follower_bot.cam_target_point.get_xy()
-        vm = self.pb_client.computeViewMatrix(cameraEyePosition=[cam_x, cam_y, cam_z],
-                                              cameraTargetPosition=[target_x, target_y, 0.0],
-                                              cameraUpVector=[0.0, 0.0, 1.0])
-        pm = self.pb_client.computeProjectionMatrixFOV(fov=49,
-                                                       aspect=320 / 240,
-                                                       nearVal=0.0001,
-                                                       farVal=1)
-        w, h, rgb, deth, seg = self.pb_client.getCameraImage(width=320,
-                                                             height=240,
-                                                             viewMatrix=vm,
-                                                             projectionMatrix=pm,
-                                                             renderer=p.ER_BULLET_HARDWARE_OPENGL)
-        rgb = np.array(rgb)
-        rgb = rgb[:, :, :3]
-        return rgb
+
+class LineFollowerCameraEnv(LineFollowerEnv):
+
+    def __init__(self):
+        super(LineFollowerCameraEnv, self).__init__(obsv_type="camera")
 
 
 if __name__ == '__main__':
 
-    env = LineFollowerEnv(gui=True, nb_cam_pts=8, max_track_err=0.4, speed_limit=0.4, max_time=600, obsv_type="latch")
+    env = LineFollowerEnv(gui=True, nb_cam_pts=8, max_track_err=0.4, speed_limit=0.4, max_time=600, obsv_type="points_latch")
     env.reset()
     for _ in range(100):
         for i in range(1000):
             obsv, rew, done, info = env.step((0., 0.))
-            env.render("pov")
             sleep(0.05)
             if done:
                 break

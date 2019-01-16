@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-import pybullet
+import pybullet as p
 
 from .reference_geometry import CameraWindow, ReferencePoint
 from .line_interpolation import sort_points, interpolate_points
@@ -18,6 +18,8 @@ class LineFollowerBot:
     """
     Class simulating a line following bot with differential steering.
     """
+    SUPPORTED_OBSV_TYPE = ["points_visible", "points_latch", "points_latch_bool", "camera"]
+
     def __init__(self, pb_client, nb_cam_points, start_xy, start_yaw, config, obsv_type="visible"):
         """
         Initialize bot.
@@ -27,12 +29,13 @@ class LineFollowerBot:
         :param start_yaw: starting yaw
         :param config: configuration dictionary
         :param obsv_type: type of line observation generated:
-                            "visible" - returns array shape (nb_cam_pts, 3)  - each line point has 3 parameters
+                            "points_visible" - returns array shape (nb_cam_pts, 3)  - each line point has 3 parameters
                                 [x, y, visibility] where visibility is 1.0 if point is visible in camera window
                                 and 0.0 if not.
-                            "latch" - returns array length nb_cam_points if at least 2 line points are visible in
+                            "points_latch" - returns array length nb_cam_points if at least 2 line points are visible in
                                 camera window, returns empty array otherwise
-                            "latch_bool" - same as "latch", se LineFollowerEnv implementation
+                            "points_latch_bool" - same as "latch", se LineFollowerEnv implementation
+                            "camera" - return (240, 320, 3) camera image RGB array
         """
         self.local_dir = os.path.dirname(__file__)
         self.config = config
@@ -59,6 +62,8 @@ class LineFollowerBot:
         self.right_motor: DCMotor = None
 
         self.obsv_type = obsv_type.lower()
+        if self.obsv_type not in self.SUPPORTED_OBSV_TYPE:
+            raise ValueError("Observation type '{}' not supported.".format(self.obsv_type))
 
         self.reset(start_xy, start_yaw)
 
@@ -147,7 +152,7 @@ class LineFollowerBot:
         self._update_position_velocity()
         visible_pts = self.cam_window.visible_points(track.mpt)
 
-        if self.obsv_type == "visible":
+        if self.obsv_type == "points_visible":
             if len(visible_pts) > 0:
                 pts = self.cam_window.convert_points_to_local(visible_pts)
                 pts = sort_points(pts, origin=self.track_ref_point.get_xy())
@@ -169,7 +174,7 @@ class LineFollowerBot:
             observation = observation.flatten().tolist()
             return observation
 
-        elif self.obsv_type in ["latch", "latch_bool"]:
+        elif self.obsv_type in ["points_latch", "points_latch_bool"]:
             if len(visible_pts) > 0:
                 visible_pts_local = self.cam_window.convert_points_to_local(visible_pts)
                 visible_pts_local = sort_points(visible_pts_local)
@@ -181,6 +186,9 @@ class LineFollowerBot:
                     return []
             else:
                 return []
+
+        elif self.obsv_type == "camera":
+            return self.get_pov_image()
 
     def _set_wheel_torque(self, l_torque, r_torque):
         l_torque *= MOTOR_DIRECTIONS["left"]
@@ -212,3 +220,27 @@ class LineFollowerBot:
         l_torque = self.left_motor.get_torque(l_volts, l_vel)
         r_torque = self.right_motor.get_torque(r_volts, r_vel)
         self._set_wheel_torque(l_torque, r_torque)
+
+    def get_pov_image(self):
+        """
+        Render virtual camera image.
+        :return: RGB Array shape (240, 320, 3)
+        """
+        cam_x, cam_y = self.cam_pos_point.get_xy()
+        cam_z = 0.095
+        target_x, target_y = self.cam_target_point.get_xy()
+        vm = self.pb_client.computeViewMatrix(cameraEyePosition=[cam_x, cam_y, cam_z],
+                                              cameraTargetPosition=[target_x, target_y, 0.0],
+                                              cameraUpVector=[0.0, 0.0, 1.0])
+        pm = self.pb_client.computeProjectionMatrixFOV(fov=49,
+                                                       aspect=320 / 240,
+                                                       nearVal=0.0001,
+                                                       farVal=1)
+        w, h, rgb, deth, seg = self.pb_client.getCameraImage(width=320,
+                                                             height=240,
+                                                             viewMatrix=vm,
+                                                             projectionMatrix=pm,
+                                                             renderer=p.ER_BULLET_HARDWARE_OPENGL)
+        rgb = np.array(rgb)
+        rgb = rgb[:, :, :3]
+        return rgb

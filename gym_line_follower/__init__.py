@@ -6,3 +6,10 @@ register(
     trials=10,
     reward_threshold=700
 )
+
+register(
+    id='LineFollowerCamera-v0',
+    entry_point='gym_line_follower.envs:LineFollowerCameraEnv',
+    trials=10,
+    reward_threshold=700
+)
