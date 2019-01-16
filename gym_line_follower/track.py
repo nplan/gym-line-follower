@@ -8,7 +8,7 @@ from scipy.special import binom
 from shapely.geometry import MultiPoint, Point, LineString
 from shapely.ops import nearest_points
 
-from utils.line_interpolation import interpolate_points
+from gym_line_follower.line_interpolation import interpolate_points
 
 root_dir = os.path.dirname(__file__)
 

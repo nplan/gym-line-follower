@@ -9,11 +9,11 @@ from gym.utils import seeding
 import numpy as np
 import pybullet as p
 
-from gym_line_follower.gym_line_follower.track import Track
-from gym_line_follower.gym_line_follower.track_plane_builder import build_track_plane
-from gym_line_follower.gym_line_follower.bullet_client import BulletClient
-from gym_line_follower.gym_line_follower.line_follower_bot import LineFollowerBot
-from gym_line_follower.gym_line_follower.randomizer_dict import RandomizerDict
+from gym_line_follower.track import Track
+from gym_line_follower.track_plane_builder import build_track_plane
+from gym_line_follower.bullet_client import BulletClient
+from gym_line_follower.line_follower_bot import LineFollowerBot
+from gym_line_follower.randomizer_dict import RandomizerDict
 
 
 def fig2rgb_array(fig):
