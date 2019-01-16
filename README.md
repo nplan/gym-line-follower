@@ -123,7 +123,7 @@ env = gym.make("LineFollower-v0")
  
  - ```"pov"``` - return an RGB image array from a forward facing point-of-view camera.
     <img src="media/pov_render_mode.png" width="300">
-    >NOTE: Virtual camera position and viewing is currently hardcoded to match camera window parameters in 
+    >NOTE: Virtual camera position and viewing angle is currently hardcoded to match camera window parameters in 
     ```bot_config.json```. This will be improved in the future.
 
  - ```"gui"``` - make the *pybullet* GUI run at real-time FPS.
