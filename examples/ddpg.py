@@ -83,5 +83,3 @@ if __name__ == '__main__':
     env = gym.make("LineFollower-v0")
     train(env, "ddpg_1", steps=100000, pretrained_path=None)
     test(env, "models/ddpg_1/last_weights.h5f")
-
-
