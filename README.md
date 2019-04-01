@@ -53,12 +53,12 @@ env = gym.make("LineFollower-v0")
  ### LineFollower-v0
  Line follower is placed at the beginning of a closed loop track. The objective is to follow the track as quickly
  and accurately as possible. Progress is measured in percent of track driven. Episode finishes when the track
- is completed (whole loop driven), the follower gets to far from the track or when the follower goes to far from
- the last progress point in the wrong direction.
+ is completed (whole loop driven), when the follower gets to far from the track or when the follower moves in the 
+ wrong track direction for some distance.
  
  **Randomization:**
  Line track is generated randomly at the start of each episode
- and the starting angle of follower bot relative to the track is sampled from interval *(-0.2, 0.2) rad*.
+ and the starting angle of follower bot relative to the track direction is sampled from interval *(-0.2, 0.2) rad*.
  Other parameters are fixed and are specified in files ```bot_config.json``` and ```follower_bot.urdf```.
  
  **Observation Space:**
@@ -84,12 +84,12 @@ env = gym.make("LineFollower-v0")
  If the episode finishes before the track is complete, a reward of -100 is given.
  
  ### LineFollowerCamera-v0
- Same as *LineFollower-v0* except observation is rendered image from front facing camera, 
+ Same as *LineFollower-v0* except observation is a rendered image from forward facing camera, 
  returned as an RGB image array shape (240, 320, 3), type uint8.
  
  
  ## Customized environments
- Custom environments can be quickly built by making the environment
+ Custom environments can be built quickly by making the environment
  using the class constructor with arguments.
  
  ``` python
@@ -146,5 +146,5 @@ env = gym.make("LineFollower-v0")
  env = LineFollowerEnv(track_render_params=render_params)
  ```
  
- >This future can be used in combination with ```"pov"``` render mode for automatic generation of labeled image data, 
+ >This feature can be used in combination with ```"pov"``` render mode for automatic generation of labeled image data, 
  that can be used for training a line detector neural network.
