@@ -148,3 +148,8 @@ env = gym.make("LineFollower-v0")
  
  >This feature can be used in combination with ```"pov"``` render mode for automatic generation of labeled image data, 
  that can be used for training a line detector neural network.
+ 
+ ## Example - DDPG
+ The environment was used to train an agent using DDPG algorithm. The agent learns to precisely follow the line after 100k      steps. Training code and trained models are available in the ```examples``` folder. The agent performance after increasing numbers of training steps can be seen in the following video.
+ 
+<a href="https://youtu.be/Z6u6SXMQQC8"><img src="https://img.youtube.com/vi/Z6u6SXMQQC8/maxresdefault.jpg" alt="DDPG Training" width="400"><a/>
