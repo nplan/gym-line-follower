@@ -84,7 +84,8 @@ env = gym.make("LineFollower-v0")
  If the episode finishes before the track is complete, a reward of -100 is given.
  
  ### LineFollowerCamera-v0
- Same as *LineFollower-v0* except observation is returned as a RGB image array shape (240, 320, 3) type uint8.
+ Same as *LineFollower-v0* except observation is rendered image from front facing camera, 
+ returned as an RGB image array shape (240, 320, 3), type uint8.
  
  
  ## Customized environments

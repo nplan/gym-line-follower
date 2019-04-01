@@ -1,5 +1,5 @@
 """
-DDPG Agent learning example using Keras RL.
+DDPG Agent learning example using Keras-RL.
 """
 
 import os
@@ -17,6 +17,7 @@ import gym
 
 import gym_line_follower  # to register environment
 
+# Number of past subsequent observations to take as input
 window_length = 5
 
 
@@ -25,6 +26,7 @@ def build_agent(env):
     nb_actions = env.action_space.shape[0]
     print(env.observation_space.shape)
 
+    # Actor model
     actor = Sequential()
     actor.add(Flatten(input_shape=(window_length,) + env.observation_space.shape))
     actor.add(Dense(128, activation="relu"))
@@ -33,6 +35,7 @@ def build_agent(env):
     actor.add(Dense(nb_actions, activation="tanh"))
     actor.summary()
 
+    # Critic model
     action_input = Input(shape=(nb_actions,), name='action_input')
     observation_input = Input(shape=(window_length,) + env.observation_space.shape, name='observation_input')
     flattened_observation = Flatten()(observation_input)
@@ -45,7 +48,10 @@ def build_agent(env):
     critic.summary()
 
     memory = SequentialMemory(limit=1000000, window_length=window_length)
-    # Exploration policy - has a great effect on learinig. Should encourage forward motion.
+    # Exploration policy - has a great effect on learning. Should encourage forward motion.
+    # theta - how fast the process returns to the mean
+    # mu - mean value - this should be greater than 0 to encourage forward motion
+    # sigma - volatility of the process
     random_process = OrnsteinUhlenbeckProcess(size=nb_actions, theta=.5, mu=0.4, sigma=0.3)
     agent = DDPGAgent(nb_actions=nb_actions, actor=actor, critic=critic, critic_action_input=action_input,
                       memory=memory, nb_steps_warmup_critic=50, nb_steps_warmup_actor=50,
@@ -56,7 +62,7 @@ def build_agent(env):
 
 def train(env, name, steps=25000, pretrained_path=None):
     agent = build_agent(env)
-    # Load pre-trained weights
+    # Load pre-trained weights optionally
     if pretrained_path is not None:
         agent.load_weights(pretrained_path)
 
