@@ -43,13 +43,13 @@ class LineFollowerEnv(gym.Env):
         :param config: config dict. If none, 'bot_config.json' is loaded
         :param randomize: when True, track is generated randomly at each episode start,
         :param obsv_type: type of line observation generated:
-                            "points_visible" - returns array shape (nb_cam_pts, 3)  - each line point has 3 parameters
-                                [x, y, visibility] where visibility is 1.0 if point is visible in camera window
-                                and 0.0 if not.
-                            "points_latch" - returns array length nb_cam_points if at least 2 line points are visible in
-                                camera window, returns empty array otherwise
+                            "points_visible" - returns flattened array shape (3 * nb_cam_pts,) - each line point has
+                                3 parameters [x, y, visibility] where visibility is 1.0 if point is visible in camera
+                                window and 0.0 if not.
+                            "points_latch" - returns flattened array shape (2 * nb_cam_pts,) if at least 2 line points
+                                are visible in camera window, otherwise returns previous observation
                             "points_latch_bool" - same as "latch" with one additional value to indicate if line is
-                                visible or not (0 or 1)
+                                visible or not (0 or 1) - shape (2 * nb_cam_pts + 1)
                             "camera" - return (240, 320, 3) camera image RGB array
         :param track: Optional track instance to use. If none track is generated randomly.
         :param track_render_params: Track render parameters dict.

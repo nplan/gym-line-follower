@@ -207,6 +207,7 @@ class Track:
             return cls.generate(approx_width, hw_ratio, seed, irregularity, spikeyness, num_verts, *args, **kwargs)
 
         # Randomly flip track direction
+        np.random.seed(seed)
         if np.random.choice([True, False]):
             pts = np.flip(pts, axis=0)
         return cls(pts, *args, **kwargs)
@@ -505,11 +506,23 @@ class Track:
 
 
 if __name__ == '__main__':
-    t = Track.generate(2.0, hw_ratio=0.7, seed=4125,
-                       spikeyness=0.2, nb_checkpoints=500)
-
     import matplotlib.pyplot as plt
-    img = t.render()
-    plt.imshow(img)
+
+    # t = Track.generate(2.0, hw_ratio=0.7, seed=4125,
+    #                    spikeyness=0.2, nb_checkpoints=500)
+
+    # img = t.render()
+    # plt.imshow(img)
+    # plt.show()
+
+    for i in range(9):
+        t = Track.generate(2.0, hw_ratio=0.7, seed=None,
+                           spikeyness=0.2, nb_checkpoints=500)
+        img = t.render(ppm=1000)
+        plt.subplot(3, 3, i+1)
+        plt.imshow(img)
+        plt.axis("off")
+    # plt.tight_layout()
+    plt.savefig("track_generator.png", dpi=300)
     plt.show()
 

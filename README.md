@@ -62,7 +62,8 @@ env = gym.make("LineFollower-v0")
  Other parameters are fixed and are specified in files ```bot_config.json``` and ```follower_bot.urdf```.
  
  **Observation Space:**
- *Box(8, 2)* - 8 points with *(x, y)* coordinates representing line. Origin of the coordinate system is the robots
+ *Box(16)* - 8 points with *(x, y)* coordinates representing line, arranged in order x1, y1, x2, y2, ... 
+ Origin of the coordinate system is robots
  center of rotation. *x* in range *(0, 0.3)*, *y* in range *(-0.2, 0.2)*.
  
  **Action Space:**
