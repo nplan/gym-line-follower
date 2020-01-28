@@ -36,11 +36,15 @@ Requirements:
 
 ```
 git clone https://github.com/nplan/gym-line-follower.git
-cd gym_line_follower
-pip3 install gym_line_follower -e
+pip3 install -e gym_line_follower
 ```
 > Requirements will be installed automatically. By using ````-e```` the environment is
 installed in place and is editable.
+
+Requirements for execution of examples:
+- Keras
+- Tensorflow 1.9 - 1.14
+- Keras-RL 0.4.2
 
 ## Usage
 Load the environment as usual.
