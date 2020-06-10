@@ -41,6 +41,8 @@ pip3 install -e gym-line-follower
 > Requirements will be installed automatically. By using ````-e```` the environment is
 installed in place and is editable.
 
+After installation you must run `import gym_line_follwer` at least once. This adds the environment to gym registry and makes it available to `gym.make()`.
+
 Requirements for execution of examples:
 - Keras
 - Tensorflow 1.9 - 1.14
