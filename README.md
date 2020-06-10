@@ -36,7 +36,7 @@ Requirements:
 
 ```
 git clone https://github.com/nplan/gym-line-follower.git
-pip3 install -e gym_line_follower
+pip3 install -e gym-line-follower
 ```
 > Requirements will be installed automatically. By using ````-e```` the environment is
 installed in place and is editable.
