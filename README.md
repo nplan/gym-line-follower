@@ -41,7 +41,7 @@ pip3 install -e gym-line-follower
 > Requirements will be installed automatically. By using ````-e```` the environment is
 installed in place and is editable.
 
-You must run `import gym_line_follwer` before `import gym`. This adds the environment to gym registry and makes it available to `gym.make()`.
+You must run `import gym_line_follower` before `import gym`. This adds the environment to gym registry and makes it available to `gym.make()`.
 
 Requirements for execution of examples:
 - Keras 2.3.1
